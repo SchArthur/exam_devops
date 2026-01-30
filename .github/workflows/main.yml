@@ -7,32 +7,29 @@ on:
     branches: [ main, master ]
     
 jobs:
-  unit-test:
-    name: Unit testing
+  phpunit:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php-version: [ '8.1', '8.2' ]
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Cache Composer dependencies
-        uses: actions/cache@v3
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          path: /tmp/composer-cache
-          key: ${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          tools: composer
 
-      - name: Installing dependencies
-        uses: php-actions/composer@v6
-        with:
-          php_version: 8.1
-          php_extensions: "json zip sodium pcntl bcmath"
+      - name: Validate composer.json
+        run: composer validate --strict
 
-      - name: Running unit test
-        uses: php-actions/phpunit@v3
-        with:
-          version: 9.6
-          php_version: 8.1
-          php_extensions: "json zip sodium pcntl bcmath"
-          args: "-d date.timezone=Asia/Jakarta"
-          memory_limit: 300M
-          configuration: phpunit.xml
-          testsuite: unittest
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run PHPUnit
+        run: vendor/bin/phpunit
