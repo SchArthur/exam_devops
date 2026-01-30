@@ -5,24 +5,34 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-
+    
 jobs:
-  test:
+  unit-test:
+    name: Unit testing
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.3'
-        extensions: mbstring
-        coverage: none
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: /tmp/composer-cache
+          key: ${{ runner.os }}-${{ hashFiles('composer.lock') }}
 
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+      - name: Installing dependencies
+        uses: php-actions/composer@v6
+        with:
+          php_version: 8.1
+          php_extensions: "json zip sodium pcntl bcmath"
 
-    - name: Run tests
-      run: vendor/bin/phpunit tests
+      - name: Running unit test
+        uses: php-actions/phpunit@v3
+        with:
+          version: 9.6
+          php_version: 8.1
+          php_extensions: "json zip sodium pcntl bcmath"
+          args: "-d date.timezone=Asia/Jakarta"
+          memory_limit: 300M
+          configuration: phpunit.xml
+          testsuite: unittest
